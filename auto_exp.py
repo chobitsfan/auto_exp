@@ -56,13 +56,13 @@ class ImageSubscriber(Node):
             flat_img = np.frombuffer(msg.data, dtype=np.uint8)
             avg_bright = get_safe_exposure_level(flat_img)
             #avg_bright = np.mean(img)
-            if avg_bright <= 120 or avg_bright >= 130:
-                adj = 1 + (128 / avg_bright - 1) * 0.1
+            if avg_bright <= 100 or avg_bright >= 120:
+                adj = 1 + (110 / avg_bright - 1) * 0.1
                 self.shutter_spd_us = int(self.shutter_spd_us * adj)
-                if self.shutter_spd_us > 45000: # 20fps exposure time limit
-                    self.shutter_spd_us = 45000
-                elif self.shutter_spd_us < 500:
-                    self.shutter_spd_us = 500
+                if self.shutter_spd_us > 40000: # 20fps exposure time limit
+                    self.shutter_spd_us = 40000
+                elif self.shutter_spd_us < 1000:
+                    self.shutter_spd_us = 1000
                 #print(self.shutter_spd_us)
                 buf = struct.pack('<H', self.shutter_spd_us)
                 self.ser.write(buf)
