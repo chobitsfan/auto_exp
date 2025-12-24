@@ -35,7 +35,7 @@ def get_safe_exposure_level(flat, clip_percent=0.05):
 class ImageSubscriber(Node):
     def __init__(self):
         super().__init__('auto_exp')
-        self.subscription = self.create_subscription(Image, '/mono_left', self.callback, QoSProfile(depth=1, reliability=QoSReliabilityPolicy.BEST_EFFORT))
+        self.subscription = self.create_subscription(Image, '/mono_left_unsync', self.callback, QoSProfile(depth=1, reliability=QoSReliabilityPolicy.BEST_EFFORT))
         self.cnt = 0
         self.shutter_spd_us = 10000
         self.ser = serial.Serial('/dev/ttyAMA2', 921600)
