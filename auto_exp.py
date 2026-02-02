@@ -59,8 +59,8 @@ class ImageSubscriber(Node):
             if avg_bright <= 100 or avg_bright >= 120:
                 adj = 1 + (110 / avg_bright - 1) * 0.1
                 self.shutter_spd_us = int(self.shutter_spd_us * adj)
-                if self.shutter_spd_us > 40000: # 20fps exposure time limit
-                    self.shutter_spd_us = 40000
+                if self.shutter_spd_us > 20000: # 40fps exposure time limit
+                    self.shutter_spd_us = 20000
                 elif self.shutter_spd_us < 500:
                     self.shutter_spd_us = 500
                 print(self.shutter_spd_us, " us")
