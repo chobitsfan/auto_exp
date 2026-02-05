@@ -40,9 +40,11 @@ class ImageSubscriber(Node):
         self.subscription = self.create_subscription(Image, '/mono_left_unsync', self.callback, QoSProfile(depth=1, reliability=QoSReliabilityPolicy.BEST_EFFORT))
         self.gain_pub = self.create_publisher(Float32, "camera/gain", QoSProfile(depth=1, reliability=QoSReliabilityPolicy.BEST_EFFORT))
         self.gain = 1.0
+        self.prv_gain = 1.0
         self.MAX_GAIN = 4.0
         self.cnt = 0
         self.shutter_spd_us = 10000
+        self.prv_spd = 10000
         self.ser = serial.Serial('/dev/ttyAMA2', 921600)
     def close(self):
         if self.ser and self.ser.is_open:
@@ -62,25 +64,33 @@ class ImageSubscriber(Node):
             if avg_bright <= 100 or avg_bright >= 120:
                 adj = 1 + (110 / avg_bright - 1) * 0.1
                 if adj < 1.0 and self.gain > 1.0:
-                    self.gain *= 0.9
+                    self.gain *= adj
+                    if self.gain < 1.0:
+                        self.gain = 1.0
                     chg_gain = Float32()
                     chg_gain.data = self.gain
                     self.gain_pub.publish(chg_gain)
+                    print(self.shutter_spd_us, " us", "gain:", self.gain)
+                    self.prv_gain = self.gain
                 else:
                     self.shutter_spd_us = int(self.shutter_spd_us * adj)
                     if self.shutter_spd_us > 10000: # avoid motion blur
                         self.shutter_spd_us = 10000
-                        self.gain *= 1.1
+                        self.gain *= adj
                         if self.gain > self.MAX_GAIN:
                             self.gain = self.MAX_GAIN
-                        chg_gain = Float32()
-                        chg_gain.data = self.gain
-                        self.gain_pub.publish(chg_gain)
+                        if self.gain != self.prv_gain:
+                            chg_gain = Float32()
+                            chg_gain.data = self.gain
+                            self.gain_pub.publish(chg_gain)
+                            self.prv_gain = self.gain
                     elif self.shutter_spd_us < 500:
                         self.shutter_spd_us = 500
                     print(self.shutter_spd_us, " us", "gain:", self.gain)
-                    self.ser.write(struct.pack('<HH', self.shutter_spd_us, self.shutter_spd_us))
-                    self.ser.flush()
+                    if self.shutter_spd_us != self.prv_spd:
+                        self.ser.write(struct.pack('<HH', self.shutter_spd_us, self.shutter_spd_us))
+                        self.ser.flush()
+                        self.prv_spd = self.shutter_spd_us
 
 def main(args=None):
     rclpy.init(args=args)
